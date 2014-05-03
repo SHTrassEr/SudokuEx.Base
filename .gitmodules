@@ -1,0 +1,3 @@
+[submodule "SudokuEx.Bin"]
+	path = SudokuEx.Bin
+	url = https://github.com/SHTrassEr/SudokuEx.Bin.git

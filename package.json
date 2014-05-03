@@ -1,0 +1,14 @@
+{
+  "name": "SudokuEx",
+  "version": "0.0.1",
+  "devDependencies": {
+    "grunt": "latest",
+    "grunt-exec": "latest",
+    "grunt-contrib-copy": "latest",
+    "grunt-contrib-clean": "latest",
+    "grunt-typescript": "latest",
+    "grunt-shell": "latest",
+    "qunit": "latest",
+    "grunt-contrib-qunit": "latest"
+  }
+}

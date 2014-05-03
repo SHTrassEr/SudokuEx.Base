@@ -1,0 +1,3 @@
+interface ISudokuGenerator {
+    generate() : number[][];
+}
