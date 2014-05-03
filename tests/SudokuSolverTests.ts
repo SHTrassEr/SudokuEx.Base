@@ -34,6 +34,7 @@ var fields = [
 
     {o: SudokuUtils.parse("500010008080003410090260000030000500207000604009000020000052090042100080100030007"), 
      s: SudokuUtils.parse("523714968786593412491268753834621579217985634659347821378452196942176385165839247")},
+
 ];
 
 
@@ -72,12 +73,12 @@ test("findSolution", () => {
     sudokuField.setField(solved);
     ok(sudokuField.check());
 });
-/*
+
 test("findAllSolutions", () => {
-    var sudokuSolver = new SudokuSolver(SudokuUtils.parse("123 456 789  000 000 000  000 000 000  000 000 000  000 000 000  000 000 000  000 000 000  000 000 000  000 000 000"));
-    ok(sudokuSolver.findSolution());
+    var sudokuSolver = new SudokuSolver(SudokuUtils.parse("023400789056000123789000456034567000067891000891234000045000912078000345912000678"));
+    ok(sudokuSolver.findAllSolutions());
     var solved = sudokuSolver.getSolution();
     var sudokuField = new SudokuField();
     sudokuField.setField(solved);
     ok(sudokuField.check());
-});*/
+});

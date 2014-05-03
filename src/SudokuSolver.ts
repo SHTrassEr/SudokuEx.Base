@@ -8,7 +8,6 @@ module SudokuEx.Base {
 
     class SudokuSolverField {
         private allValueList: number[]; 
-        private blockValueRange: number[][];
         private blockListInfo: BlockListInfo;
         private sudokuField: SudokuField;
 
@@ -19,33 +18,18 @@ module SudokuEx.Base {
             this.sudokuField = sudokuField;
             this.allValueList = _.range(1, sudokuField.getMaxValue() + 1);
             this.blockListInfo = BlockListInfo.getInstance(this.sudokuField.getDimension());
-            this.blockValueRange = new Array<number[]>(this.blockListInfo.getBlockCount());
-            this.updateBlockValueRange(this.blockListInfo.getBlockList());
-        }
-
-        public getBlockValueRange(blockID: number): number[] {
-            return this.blockValueRange[blockID];
-        }
-
-        public updateBlockValueRange(blockList: number[][]): void {
-            blockList.forEach((block, blockID) => {
-                this.blockValueRange[blockID] = 
-                    block.map((cellID) => this.sudokuField.getCellById(cellID)).filter((cell) => cell > 0);
-            }, this);
         }
 
         public setCellValue(cellID: number, value: number): void {
             this.sudokuField.setCellByID(cellID, value);
-            this.updateBlockValueRange(this.blockListInfo.getBlockListByCellID(cellID));
         }
 
         public getVariantListForCell(cellID: number): number[] {
             var blockList = this.blockListInfo.getBlockListByCellID(cellID);
-            var valueArrayList = blockList.map((block, blockID) => {
-                return block.map((cellID) => this.sudokuField.getCellById(cellID)).filter((cell) => cell > 0);
+            var usedValues = [];
+            _.each(blockList, (block) => {
+                _.each(block, (cellID) => usedValues.push(this.sudokuField.getCellById(cellID)))
             }, this);
-
-            var usedValues = _.flatten(valueArrayList);
             return _.difference(this.allValueList, usedValues);
         }
 
@@ -64,19 +48,6 @@ module SudokuEx.Base {
         public check(): boolean {
             return this.sudokuField.check();
         }
-
-        public copy(): SudokuSolverField {
-            var sudokuSolverField = new SudokuSolverField();
-            sudokuSolverField.sudokuField = this.sudokuField.copy();
-            sudokuSolverField.allValueList = this.allValueList;
-            sudokuSolverField.blockListInfo = this.blockListInfo;
-            sudokuSolverField.blockValueRange = new Array<number[]>(this.blockValueRange.length);
-            for (var i = 0; i < this.blockValueRange.length; i++) {
-                sudokuSolverField.blockValueRange[i] = this.blockValueRange[i].splice(0);
-            }
-
-            return sudokuSolverField;
-        }
     }
 
 
@@ -88,13 +59,13 @@ module SudokuEx.Base {
     };
 
     export class SudokuSolver implements ISudokuSolver {
-        private sudokuSolverFieldList: SudokuSolverField[];
+        private history: number[]; 
         private currentSudokuSolver: SudokuSolverField;
         private solutionList: number[][] = [];
         private maxSolutionsCount: number;
 
         constructor(field: number[]) {
-            this.sudokuSolverFieldList = [];
+            this.history = [];
             var sudokuField = new SudokuField();
             sudokuField.setField(field);
             this.currentSudokuSolver = new SudokuSolverField();
@@ -149,16 +120,6 @@ module SudokuEx.Base {
             return solverStatus;
         }
 
-        private pushField(): void {
-            this.sudokuSolverFieldList.push(this.currentSudokuSolver);
-            this.currentSudokuSolver = this.currentSudokuSolver.copy();
-        }
-
-        private popField(): void {
-            this.currentSudokuSolver = this.sudokuSolverFieldList[this.sudokuSolverFieldList.length - 1];
-            this.sudokuSolverFieldList.pop();
-        }
-
         private iterate(goDeeper: boolean = false): SolverStatus {
             var solverStatus = SolverStatus.notModified;
             var cellsCount = this.currentSudokuSolver.getCellsCount();
@@ -180,6 +141,7 @@ module SudokuEx.Base {
             var values = this.currentSudokuSolver.getVariantListForCell(cellID);
             if (values.length == 1) {
                 this.currentSudokuSolver.setCellValue(cellID, values[0]);
+                this.history.push(cellID);
                 solverStatus = SolverStatus.modified;
             } else if (values.length == 0) {
                 solverStatus = SolverStatus.invalid;
@@ -196,10 +158,11 @@ module SudokuEx.Base {
 
         private tryValues(cellID: number, values: number[]): SolverStatus {
             var solverStatus = SolverStatus.invalid;
+            var historyLength = this.history.length;
 
             values.some(value => {
-                this.pushField();
                 this.currentSudokuSolver.setCellValue(cellID, value);
+                this.history.push(cellID);
                 if (cellID == 0) {
                     var i = 1;
                 }
@@ -210,8 +173,10 @@ module SudokuEx.Base {
                     return true;
                 } else {
                     solverStatus = SolverStatus.invalid;
-                    this.currentSudokuSolver.setCellValue(cellID, 0);
-                    this.popField();
+                    while (this.history.length > historyLength) {
+                        this.currentSudokuSolver.setCellValue(this.history.pop(), 0);    
+                    }
+                    
                     return false;
                 }
             }, this);
